@@ -413,7 +413,7 @@ BEGIN {
 
     ForEach ($CO in $ComputerObject) {
 
-        $GroupElement = Get-RDCManGroup -Element $FileElement -GroupName $CO.Group -Username $CO.UserName -Base64 (Get-RDCManSecurePassword -RDCManFile $RDCManExecutable -Password (ConvertTo-SecureString -AsPlainText -String $CO.Password -Force)) -Domain $CO.Domain
+        $GroupElement = Get-RDCManGroup -Element $FileElement -GroupName $CO.Group -Username $CO.UserName -Base64 (Convert-RDCManSecurePassword -RDCManFile $RDCManExecutable -Password (ConvertTo-SecureString -AsPlainText -String $CO.Password -Force)) -Domain $CO.Domain
         $CO | Where-Object -FilterScript { $_.Group -Match $CO.Group} | Foreach-Object { Add-RDCManServerToGroup -Group $GroupElement -ServerName "$($_.Name)" }
 
     }  # End ForEach
