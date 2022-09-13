@@ -328,44 +328,45 @@ Function Set-RDCManFile {
    [CmdletBinding()]
     Param(
         [Parameter(
-            Position=0,    
+            Position=0,   
             Mandatory=$True,
             HelpMessage="Enter the object containing your computer name info")]
         [PSObject[]]$ComputerObject,
-
+ 
         [Parameter(
             Position=1,
             Mandatory=$False
         )]  # End Parameter
         [String]$OutFile,
-
+ 
         [Parameter(
-            Position=2,    
+            Position=2,   
             Mandatory=$False)]
         [ValidateScript({Test-Path -Path $_})]
         [String]$RDCManExecutable,
-
+ 
         [Parameter(
-            Position=3,    
+            Position=3,   
             Mandatory=$False)]
         [ValidateScript({Test-Path -Path $_})]
         [String]$XmlTemplate = "$env:TEMP\RDCManTemplate.rdg",
-
+ 
         [Parameter(
             Mandatory=$False
         )]  # End Parameter
         [Switch][Bool]$Open
     )  # End param
-
+ 
 BEGIN {
-     
+    
+    $GroupElement = @()
     Write-Verbose "Getting the location of the RDCMan.exe executable"
     If ($RDCManExecutable.Length -lt 2) {
-
+ 
         $RDCManExecutable = Get-ChildItem -Path "C:\" -Recurse -Filter "RDCMan.exe" -ErrorAction SilentlyContinue -Force | Select-Object -First 1 -ExpandProperty FullName
-
+ 
     }  # End If
-
+ 
     [Xml]$Template = '<?xml version="1.0" encoding="utf-8"?>
 <RDCMan programVersion="2.7" schemaVersion="3">
     <file>
@@ -401,38 +402,41 @@ BEGIN {
     <favorites />
     <recentlyUsed />
 </RDCMan>'
-
+ 
     $FileElement = $Template.RDCMan.File
     $GroupTemplateElement = $FileElement.Group
     $ServerTemplateElement = $GroupTemplateElement.Server
     $FileElement.Properties.Name = 'Servers' # Root element name
-
-    $GroupElement = Get-RDCManGroup -Element $FileElement -GroupName $ComputerObject.Group -Username $ComputerObject.UserName -Base64 (Convert-RDCManSecurePassword -RDCManFile $RDCManExecutable -Password (ConvertTo-SecureString -AsPlainText -String $ComputerObject.Password -Force)) -Domain $ComputerObject.Domain
-
+ 
 } PROCESS {
-
+ 
     ForEach ($CO in $ComputerObject) {
-
-        $GroupElement = Get-RDCManGroup -Element $FileElement -GroupName $CO.Group -Username $CO.UserName -Base64 (Convert-RDCManSecurePassword -RDCManFile $RDCManExecutable -Password (ConvertTo-SecureString -AsPlainText -String $CO.Password -Force)) -Domain $CO.Domain
-        $CO | Where-Object -FilterScript { $_.Group -Match $CO.Group} | Foreach-Object { Add-RDCManServerToGroup -Group $GroupElement -ServerName "$($_.Name)" }
-
+ 
+        If ($Null -ne $CO.Name -and $Null -ne $CO.Group) {
+       
+            $GroupElement = Get-RDCManGroup -Element $FileElement -GroupName $CO.Group -Username $CO.UserName -Base64 (Get-RDCManSecurePassword -RDCManFile $RDCManExecutable -Password (ConvertTo-SecureString -AsPlainText -String $CO.Password -Force)) -Domain $CO.Domain
+            $CO | Where-Object -FilterScript { $_.Group -Match $CO.Group} | Foreach-Object { Add-RDCManServerToGroup -Group $GroupElement -ServerName "$($_.Name)" }
+      
+        }  # End If
+ 
     }  # End ForEach
-   
+  
 } END {
-
+ 
     [Void]$FileElement.RemoveChild($GroupTemplateElement)
-
+ 
     $TempFile = New-TemporaryFile
     $Template.Save($TempFile)
-
+ 
     Move-Item -Path $TempFile -Destination $OutFile -Force -Confirm:$False
-
+ 
     If ($Open.IsPresent) {
-
-        & $RDCMan $TempFile
-
+ 
+        & $RDCManExecutable $OutFile
+ 
     }  # End If
-
+  
+ 
 }  # End END
-
+ 
 }  # End Function Get-RDCManFile
