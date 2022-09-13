@@ -248,7 +248,7 @@ BEGIN {
  
 }  # End END
  
-}  # End Function Get-RDCManFile
+}  # End Function Set-RDCManFile
  
 $HT = @{}
 $Devices = @()
