@@ -420,10 +420,10 @@ BEGIN {
         }  # End If
  
     }  # End ForEach
+    
+    [Void]$FileElement.RemoveChild($GroupTemplateElement)
   
 } END {
- 
-    [Void]$FileElement.RemoveChild($GroupTemplateElement)
  
     $TempFile = New-TemporaryFile
     $Template.Save($TempFile)
