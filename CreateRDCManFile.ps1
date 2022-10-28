@@ -230,9 +230,9 @@ BEGIN {
  
     }  # End ForEach
   
-} END {
- 
     [Void]$FileElement.RemoveChild($GroupTemplateElement)
+      
+} END {
  
     $TempFile = New-TemporaryFile
     $Template.Save($TempFile)
